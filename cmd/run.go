@@ -8,7 +8,7 @@ import (
 )
 
 // Version is the plusev-cli version. Bumped on release.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // Run builds and runs the plusev-cli app. Mirrors terminal/cmd/run.go.
 func Run() {
