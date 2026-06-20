@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/kataras/golog"
 	"github.com/plusev-terminal/plusev-cli/internal/config"
 	"github.com/plusev-terminal/plusev-cli/internal/prompt"
@@ -12,7 +10,7 @@ import (
 func initCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "init",
-		Usage: "Save credentials for a registry. Prompts for the dev key and secret.",
+		Usage: "Save credentials for a registry. Prompts interactively if --registry is not provided.",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "label",
@@ -22,7 +20,11 @@ func initCommand() *cli.Command {
 		Action: func(c *cli.Context) error {
 			baseURL := c.String("registry")
 			if baseURL == "" {
-				return fmt.Errorf("init requires --registry <url> (the registry base URL, e.g. https://host/extapi)")
+				var err error
+				baseURL, err = prompt.RequiredText("Registry URL", "the registry base URL, e.g. https://host/extapi")
+				if err != nil {
+					return err
+				}
 			}
 
 			label := c.String("label")
