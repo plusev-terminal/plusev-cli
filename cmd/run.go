@@ -8,7 +8,7 @@ import (
 )
 
 // Version is the plusev-cli version. Bumped on release.
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 // Run builds and runs the plusev-cli app. Mirrors terminal/cmd/run.go.
 func Run() {
@@ -40,7 +40,7 @@ func globalFlags() []cli.Flag {
 		&cli.BoolFlag{
 			Name:    "debug",
 			Aliases: []string{"d"},
-			Usage:   "Enable debug logging",
+			Usage:   "Enable debug logging (prints every HMAC-signed request and response body)",
 			EnvVars: []string{"PLUSEV_CLI_DEBUG"},
 		},
 		// registry has two roles: for `init` it is the base URL of a new

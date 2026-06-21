@@ -5,25 +5,10 @@ import (
 	"time"
 )
 
-// EntryFields is the payload sent to entries/init to create or update a plugin
-// entry. Mirrors the relevant fields of RepoPluginEntry from plugin_repo.
-type EntryFields struct {
-	PluginID    string   `json:"pluginId"`
-	AppID       string   `json:"appId"`
-	Category    string   `json:"category,omitempty"`
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	Author      string   `json:"author,omitempty"`
-	Version     string   `json:"version,omitempty"`
-	Repository  string   `json:"repository,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
-	Features    []string `json:"features,omitempty"`
-}
-
-// PublishRelease is the payload sent to releases/publish.
+// PublishRelease is the payload sent to releases/publish. PluginId and
+// Version are no longer included — the server reads them from the WASM meta
+// export and uses the plugin binary as the source of truth.
 type PublishRelease struct {
-	PluginID  string `json:"pluginId"`
-	Version   string `json:"version"`
 	Sha256    string `json:"sha256"`
 	Channel   string `json:"channel,omitempty"`
 	Changelog string `json:"changelog,omitempty"`

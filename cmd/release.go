@@ -25,28 +25,19 @@ func releaseCommand() *cli.Command {
 func releasePublishCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "publish",
-		Usage: "Publish a release for an already-uploaded wasm binary.",
+		Usage: "Publish a release for an already-uploaded wasm binary. The plugin ID and version are read from the WASM by the server.",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "plugin-id", Required: true, Usage: "The pluginId of the entry"},
-			&cli.StringFlag{Name: "version", Required: true, Usage: "Semver version (e.g. 1.2.3)"},
 			&cli.StringFlag{Name: "sha256", Required: true, Usage: "sha256 of a previously uploaded wasm (from 'plusev-cli publish' or files/upload)"},
 			&cli.StringFlag{Name: "channel", Usage: "Release channel", Value: "stable"},
 			&cli.StringFlag{Name: "changelog", Usage: "Release notes / changelog"},
 		},
 		Action: func(c *cli.Context) error {
-			version := c.String("version")
-			if !semver.IsValid("v" + version) {
-				return fmt.Errorf("--version must be valid semver, got %q", version)
-			}
-
 			client, err := loadClient(c)
 			if err != nil {
 				return err
 			}
 
 			err = client.PublishRelease(c.Context, api.PublishRelease{
-				PluginID:  c.String("plugin-id"),
-				Version:   version,
 				Sha256:    c.String("sha256"),
 				Channel:   c.String("channel"),
 				Changelog: c.String("changelog"),
@@ -55,7 +46,7 @@ func releasePublishCommand() *cli.Command {
 				return err
 			}
 
-			output.Success(fmt.Sprintf("Published %s %s", c.String("plugin-id"), version))
+			output.Success("Release published")
 
 			return nil
 		},

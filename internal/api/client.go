@@ -14,11 +14,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kataras/golog"
 )
 
 const (
 	pathFilesUpload       = "/plugin_repo/v1/files/upload"
-	pathEntriesInit       = "/plugin_repo/v1/entries/init"
 	pathReleasesPublish   = "/plugin_repo/v1/releases/publish"
 	pathSubmissionsList   = "/plugin_repo/v1/submissions/list"
 	pathSubmissionsCancel = "/plugin_repo/v1/submissions/cancel"
@@ -113,6 +114,13 @@ func (c *Client) do(ctx context.Context, method, path string, body []byte, conte
 	req.Header.Set("X-Signature", sig)
 	req.Header.Set("User-Agent", c.UserAgent)
 
+	golog.Debugf("→ %s %s (signature=%s…)", method, url, sig[:12])
+	if len(body) > 0 && len(body) < 4096 {
+		golog.Debugf("  body: %s", string(body))
+	} else if len(body) >= 4096 {
+		golog.Debugf("  body: <%d bytes — too large to log>", len(body))
+	}
+
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
@@ -123,6 +131,13 @@ func (c *Client) do(ctx context.Context, method, path string, body []byte, conte
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("read response: %w", err)
+	}
+
+	golog.Debugf("← %d %s (body=%d bytes)", resp.StatusCode, url, len(raw))
+	if len(raw) > 0 && len(raw) < 4096 {
+		golog.Debugf("  body: %s", string(raw))
+	} else if len(raw) >= 4096 {
+		golog.Debugf("  body: <%d bytes — too large to log>", len(raw))
 	}
 
 	switch {
@@ -187,10 +202,6 @@ func (c *Client) UploadFile(ctx context.Context, filename string, content []byte
 	}
 
 	return &out, nil
-}
-
-func (c *Client) InitEntry(ctx context.Context, fields EntryFields) error {
-	return c.Post(ctx, pathEntriesInit, fields, nil)
 }
 
 func (c *Client) PublishRelease(ctx context.Context, r PublishRelease) error {
