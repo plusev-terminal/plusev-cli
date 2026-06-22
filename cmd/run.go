@@ -7,8 +7,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Version is the plusev-cli version. Bumped on release.
-const Version = "0.3.0"
+// Version is the plusev-cli version. Set at build time via -ldflags.
+// Default value is for development builds.
+var Version = "0.0.0-dev"
 
 // Run builds and runs the plusev-cli app. Mirrors terminal/cmd/run.go.
 func Run() {
