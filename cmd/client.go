@@ -27,6 +27,7 @@ func loadClient(c *cli.Context) (*api.Client, error) {
 //  3. PLUSEV_API_KEY / PLUSEV_SECRET always override credentials from a file
 func resolveConfig(c *cli.Context) (*config.Config, error) {
 	if baseURL := strings.TrimSpace(c.String("base-url")); baseURL != "" {
+		baseURL = config.NormalizeBaseURL(baseURL)
 		key := c.String("api-key")
 		secret := c.String("api-secret")
 

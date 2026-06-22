@@ -54,6 +54,17 @@ type UpdateEmailReq struct {
 	Email string `json:"email"`
 }
 
+// WhoamiResult is returned from /whoami — the repo metadata for the
+// authenticated dev key. Used by `registry add` to derive the config label
+// and validate credentials before saving.
+type WhoamiResult struct {
+	ID          uint64 `json:"id"`
+	Name        string `json:"name"`
+	Slug        string `json:"slug"`
+	IsPublic    bool   `json:"isPublic"`
+	Description string `json:"description"`
+}
+
 // PluginListEntry is a plugin entry as returned by plugins/list.
 type PluginListEntry struct {
 	ID          uint64   `json:"id"`

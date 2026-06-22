@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	pathWhoami            = "/plugin_repo/v1/whoami"
 	pathFilesUpload       = "/plugin_repo/v1/files/upload"
 	pathReleasesPublish   = "/plugin_repo/v1/releases/publish"
 	pathSubmissionsList   = "/plugin_repo/v1/submissions/list"
@@ -50,6 +51,19 @@ func New(baseURL, apiKey, apiSecret string) *Client {
 		HTTP:      &http.Client{Timeout: 2 * time.Minute},
 		UserAgent: "plusev-cli",
 	}
+}
+
+// Whoami calls the /whoami endpoint to validate credentials and return
+// the repo metadata associated with the dev key. Used by `registry add`
+// to derive a unique label from the repo slug.
+func (c *Client) Whoami(ctx context.Context) (*WhoamiResult, error) {
+	var out WhoamiResult
+
+	if err := c.Post(ctx, pathWhoami, nil, &out); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
 }
 
 // Post sends a JSON POST and decodes the wrapped response into result.

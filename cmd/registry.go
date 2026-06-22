@@ -32,25 +32,20 @@ func registryAddCommand() *cli.Command {
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "label",
-				Usage: "Optional friendly name for this registry (defaults to the host)",
+				Usage: "Optional friendly name for this registry (defaults to the repo slug from /whoami)",
 			},
 		},
 		Action: func(c *cli.Context) error {
 			baseURL := c.String("registry")
 			if baseURL == "" {
 				var err error
-				baseURL, err = prompt.RequiredText("Registry URL", "the registry base URL, e.g. https://host/extapi")
+				baseURL, err = prompt.RequiredText("Registry URL", "e.g. https://plusev-terminal.app")
 				if err != nil {
 					return err
 				}
 			}
 
-			label := c.String("label")
-			if label == "" {
-				label = config.HostFromURL(baseURL)
-			}
-
-			golog.Infof("Configuring registry %s as %q", baseURL, label)
+			baseURL = config.NormalizeBaseURL(baseURL)
 
 			apiKey, err := prompt.RequiredText("Dev key", "the dev key id issued by the repo owner")
 			if err != nil {
@@ -61,6 +56,22 @@ func registryAddCommand() *cli.Command {
 			if err != nil {
 				return err
 			}
+
+			// Validate credentials and discover the repo.
+			client := api.New(baseURL, apiKey, apiSecret)
+			golog.Info("Validating credentials...")
+
+			whoami, err := client.Whoami(c.Context)
+			if err != nil {
+				return fmt.Errorf("invalid credentials or key not associated with any repo: %w", err)
+			}
+
+			label := c.String("label")
+			if label == "" {
+				label = whoami.Slug
+			}
+
+			golog.Infof("Configuring registry %q (%s) as %q", whoami.Name, baseURL, label)
 
 			cfg := &config.Config{
 				Label:     label,

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -68,8 +69,10 @@ func LoadAll() (map[string]*Config, error) {
 	return out, nil
 }
 
-// Save writes the config to {label}.toml with mode 0600, creating the config
-// directory if needed. Returns the path written.
+// Save writes the config to {domain}_{label}.toml with mode 0600, creating the
+// config directory if needed. The domain prefix is derived from cfg.BaseURL so
+// that two registries with the same label (slug) do not collide. Returns the
+// path written.
 func Save(cfg *Config) (string, error) {
 	dir, err := Dir()
 	if err != nil {
@@ -84,7 +87,21 @@ func Save(cfg *Config) (string, error) {
 		return "", fmt.Errorf("config label is required")
 	}
 
-	path := filepath.Join(dir, cfg.Label+".toml")
+	domain := domainFromURL(cfg.BaseURL)
+	label := cfg.Label
+
+	// Avoid double-prefixing when re-saving a config that was loaded from
+	// a file whose name already contains the domain prefix.
+	if domain != "" {
+		label = strings.TrimPrefix(label, domain+"_")
+	}
+
+	name := label
+	if domain != "" {
+		name = domain + "_" + label
+	}
+
+	path := filepath.Join(dir, name+".toml")
 
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
@@ -114,6 +131,38 @@ func Delete(label string) error {
 	}
 
 	return nil
+}
+
+// NormalizeBaseURL ensures the registry URL ends with /extapi so users can
+// supply a bare hostname like https://plusev-terminal.app.
+func NormalizeBaseURL(rawURL string) string {
+	rawURL = strings.TrimSpace(rawURL)
+	rawURL = strings.TrimRight(rawURL, "/")
+
+	if !strings.HasSuffix(rawURL, "/extapi") {
+		rawURL += "/extapi"
+	}
+
+	return rawURL
+}
+
+// domainFromURL extracts the host[:port] portion of a registry URL for use
+// as a filename prefix. The scheme and path are discarded; the colon in an
+// optional port is replaced with an underscore for Windows safety.
+func domainFromURL(rawURL string) string {
+	rawURL = strings.TrimSpace(rawURL)
+
+	// net/url.Parse requires a scheme to separate host from path.
+	if !strings.Contains(rawURL, "://") {
+		rawURL = "https://" + rawURL
+	}
+
+	u, err := url.Parse(rawURL)
+	if err != nil || u.Host == "" {
+		return ""
+	}
+
+	return strings.ReplaceAll(u.Host, ":", "_")
 }
 
 // HostFromURL derives a filesystem-safe label from a registry base URL. The

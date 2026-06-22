@@ -59,7 +59,7 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		t.Fatalf("LoadAll: %v", err)
 	}
 
-	got, ok := all["prod"]
+	got, ok := all["terminal.example.com_prod"]
 	if !ok {
 		t.Fatalf("LoadAll did not return the prod config: %#v", all)
 	}
@@ -68,8 +68,8 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		t.Errorf("round-trip mismatch: got %+v, want %+v", got, cfg)
 	}
 
-	if got.Label != "prod" {
-		t.Errorf("Label = %q, want %q", got.Label, "prod")
+	if got.Label != "terminal.example.com_prod" {
+		t.Errorf("Label = %q, want %q", got.Label, "terminal.example.com_prod")
 	}
 }
 
