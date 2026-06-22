@@ -15,6 +15,7 @@ import (
 	"github.com/plusev-terminal/plusev-cli/internal/api"
 	"github.com/plusev-terminal/plusev-cli/internal/output"
 	"github.com/plusev-terminal/plusev-cli/internal/prompt"
+	"github.com/tetratelabs/wazero"
 	"github.com/urfave/cli/v2"
 )
 
@@ -115,12 +116,17 @@ func publishCommand() *cli.Command {
 //
 // The meta function itself only uses pdk.OutputJSON (which lives in the
 // extism:host/env module that the SDK provides), so we don't need real
-// implementations of any extism:host/user functions. We provide empty stubs
-// for every known host symbol from go-plugin-common so the WASM module
-// imports resolve, even if the plugin's source references them transitively
-// (e.g. via logging or requester packages that get dead-code-eliminated
-// from the final binary in many cases — but not always).
+// implementations of any extism:host/user functions. But the module still
+// imports every host symbol its source references at link time, so those must
+// resolve at instantiation. We read the exact set the binary declares and
+// provide a no-op stub for each — the binary is the source of truth, so this
+// never drifts as new host functions are added to go-plugin-common.
 func readPluginMeta(ctx context.Context, wasmPath string) (*pluginMeta, error) {
+	importNames, err := importedHostFunctionNames(ctx, wasmPath)
+	if err != nil {
+		return nil, fmt.Errorf("read host imports: %w", err)
+	}
+
 	manifest := extism.Manifest{
 		Wasm: []extism.Wasm{
 			extism.WasmFile{Path: wasmPath},
@@ -129,7 +135,7 @@ func readPluginMeta(ctx context.Context, wasmPath string) (*pluginMeta, error) {
 
 	compiled, err := extism.NewCompiledPlugin(ctx, manifest, extism.PluginConfig{
 		EnableWasi: true,
-	}, stubHostFunctions())
+	}, stubHostFunctions(importNames))
 	if err != nil {
 		return nil, fmt.Errorf("compile plugin: %w", err)
 	}
@@ -166,32 +172,60 @@ func readPluginMeta(ctx context.Context, wasmPath string) (*pluginMeta, error) {
 	return &meta, nil
 }
 
-// stubHostFunctions returns no-op implementations of every extism:host/user
-// symbol declared by go-plugin-common. The meta export never calls any of
-// them, but the WASM module imports them at link time, so they have to
-// resolve. None of these should be invoked in practice — if a plugin's
-// meta somehow triggers one of these, the no-op is safe (it just returns 0).
-func stubHostFunctions() []extism.HostFunction {
-	noop := func(_ context.Context, _ *extism.CurrentPlugin, _ []uint64) {}
+// extismHostUserNamespace is the module name under which extism registers
+// host functions. Plugins import their host symbols from here via their
+// //go:wasmimport declarations.
+const extismHostUserNamespace = "extism:host/user"
 
-	names := []string{
-		"log_record",
-		"http_request",
-		"time_now",
-		"sleep_ms",
-		"submit_trade",
-		"submit_transfer",
-		"get_records",
-		"get_settings",
-		"submit_report_entry",
-		"report_progress",
+// importedHostFunctionNames compiles the WASM binary with a throwaway wazero
+// runtime and returns the names of every import under the extism:host/user
+// namespace. These are exactly the host symbols the module needs resolved at
+// instantiation time. Only compilation happens here — no instantiation — so
+// unresolved imports don't error. The binary is the single source of truth,
+// so this never goes stale as new host functions are added to
+// go-plugin-common.
+func importedHostFunctionNames(ctx context.Context, wasmPath string) ([]string, error) {
+	wasmBytes, err := os.ReadFile(wasmPath)
+	if err != nil {
+		return nil, fmt.Errorf("read wasm: %w", err)
 	}
+
+	rt := wazero.NewRuntime(ctx)
+	defer rt.Close(ctx)
+
+	compiled, err := rt.CompileModule(ctx, wasmBytes)
+	if err != nil {
+		return nil, fmt.Errorf("compile module: %w", err)
+	}
+	defer compiled.Close(ctx)
+
+	imported := compiled.ImportedFunctions()
+	if len(imported) == 0 {
+		return nil, nil
+	}
+
+	names := make([]string, 0, len(imported))
+	for _, f := range imported {
+		moduleName, name, isImport := f.Import()
+		if isImport && moduleName == extismHostUserNamespace {
+			names = append(names, name)
+		}
+	}
+
+	return names, nil
+}
+
+// stubHostFunctions returns a no-op (i64) -> (i64) stub for each given host
+// import name. The meta export never calls any of them, but the WASM module
+// imports them at link time, so they must resolve at instantiation. The names
+// come straight from the binary's import section (see
+// importedHostFunctionNames), so this can never drift out of sync with
+// go-plugin-common.
+func stubHostFunctions(names []string) []extism.HostFunction {
+	noop := func(_ context.Context, _ *extism.CurrentPlugin, _ []uint64) {}
 
 	out := make([]extism.HostFunction, 0, len(names))
 	for _, name := range names {
-		// All go-plugin-common host functions are (i64) -> (i64) per their
-		// //go:wasmimport declarations. The no-op body returns zero and ignores
-		// inputs — meta never actually calls any of these.
 		out = append(out, extism.NewHostFunctionWithStack(name, noop,
 			[]extism.ValueType{extism.ValueTypeI64},
 			[]extism.ValueType{extism.ValueTypeI64}))

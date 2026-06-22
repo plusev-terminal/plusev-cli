@@ -100,6 +100,22 @@ func Save(cfg *Config) (string, error) {
 	return path, nil
 }
 
+// Delete removes the config file for a saved registry.
+func Delete(label string) error {
+	dir, err := Dir()
+	if err != nil {
+		return fmt.Errorf("locate config dir: %w", err)
+	}
+
+	path := filepath.Join(dir, label+".toml")
+
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("delete %s: %w", path, err)
+	}
+
+	return nil
+}
+
 // HostFromURL derives a filesystem-safe label from a registry base URL. The
 // scheme is stripped and remaining separators are replaced with dashes so two
 // registries on the same host but different paths do not collide.

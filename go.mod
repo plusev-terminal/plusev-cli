@@ -9,6 +9,7 @@ require (
 	github.com/extism/go-sdk v1.7.1
 	github.com/kataras/golog v0.1.15
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/tetratelabs/wazero v1.9.0
 	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/mod v0.37.0
 )
@@ -42,7 +43,6 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834 // indirect
-	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect

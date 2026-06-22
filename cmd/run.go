@@ -43,13 +43,13 @@ func globalFlags() []cli.Flag {
 			Usage:   "Enable debug logging (prints every HMAC-signed request and response body)",
 			EnvVars: []string{"PLUSEV_CLI_DEBUG"},
 		},
-		// registry has two roles: for `init` it is the base URL of a new
-		// registry to configure; for every other command it is the label or
-		// host of a previously saved registry to use.
+		// registry has two roles: for `registry add` it is the base URL of a
+		// new registry to configure; for every other command it is the label
+		// or host of a previously saved registry to use.
 		&cli.StringFlag{
 			Name:    "registry",
 			Aliases: []string{"r"},
-			Usage:   "Registry base URL (init) OR saved registry label/host to use",
+			Usage:   "Registry base URL (add) OR saved registry label/host to use",
 			EnvVars: []string{"PLUSEV_REGISTRY"},
 		},
 		&cli.StringFlag{
@@ -72,7 +72,7 @@ func globalFlags() []cli.Flag {
 
 func commands() []*cli.Command {
 	return []*cli.Command{
-		initCommand(),
+		registryCommand(),
 		publishCommand(),
 		pluginCommand(),
 		releaseCommand(),

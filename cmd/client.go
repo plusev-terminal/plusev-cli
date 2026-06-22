@@ -46,7 +46,7 @@ func resolveConfig(c *cli.Context) (*config.Config, error) {
 
 	switch {
 	case len(all) == 0:
-		return nil, fmt.Errorf("no registry configured — run 'plusev-cli init --registry <url>' first")
+		return nil, fmt.Errorf("no registry configured — run 'plusev-cli registry add --registry <url>' first")
 	case len(all) == 1:
 		for _, v := range all {
 			cfg = v
@@ -83,11 +83,11 @@ func resolveConfig(c *cli.Context) (*config.Config, error) {
 	}
 
 	if cfg.BaseURL == "" {
-		return nil, fmt.Errorf("registry %q has no base URL — re-run 'plusev-cli init'", cfg.Label)
+		return nil, fmt.Errorf("registry %q has no base URL — re-run 'plusev-cli registry add'", cfg.Label)
 	}
 
 	if cfg.APIKey == "" || cfg.APISecret == "" {
-		return nil, fmt.Errorf("registry %q has no credentials — re-run 'plusev-cli init'", cfg.Label)
+		return nil, fmt.Errorf("registry %q has no credentials — re-run 'plusev-cli registry add'", cfg.Label)
 	}
 
 	return cfg, nil

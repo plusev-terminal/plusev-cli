@@ -1,7 +1,7 @@
 # plusev-cli
 
 Command line tool for publishing and managing plugins in a
-[PlusEV Terminal](https://github.com/plusev-terminal) `plugin_repo` registry.
+[PlusEV Terminal](https://github.com/plusev-terminal) Plugin Registry.
 
 It speaks the HMAC-authenticated `plugin_repo` write endpoints exposed by a
 Terminal instance and lets a third-party developer ship plugins to a registry
@@ -24,8 +24,8 @@ go build -o plusev-cli .
 ## Quick start
 
 ```bash
-# 1. Configure a registry (prompts for the dev key id + secret the owner issued)
-plusev-cli init --registry https://terminal.example.com/extapi
+# 1. Configure a registry (prompts for registry url, the dev key id + secret the owner issued)
+plusev-cli registry add
 
 # 2. From your plugin project, build + upload + publish in one step
 plusev-cli publish --plugin-id my-cool-plugin --version 1.0.0
@@ -39,7 +39,7 @@ plusev-cli submission list
 
 ## Credentials
 
-`init` stores one TOML file per registry at `~/.config/plusev/{label}.toml`
+`registry add` stores one TOML file per registry at `~/.config/plusev/{label}.toml`
 (mode `0600`):
 
 ```toml
@@ -69,7 +69,10 @@ credentials via `PLUSEV_API_KEY` / `PLUSEV_SECRET`.
 ## Commands
 
 ```
-plusev-cli init --registry <url> [--label <name>]      configure a registry
+plusev-cli registry add --registry <url> [--label <name>]      configure a registry
+plusev-cli registry list                                        list saved registries
+plusev-cli registry delete [--registry <label>]                 delete a registry
+plusev-cli registry prune [--registry <label>]                  purge all plugins from a registry
 plusev-cli publish                                      build + upload + publish a release
 plusev-cli plugin init                                  create/update a plugin entry
 plusev-cli plugin list                                  list your plugins
@@ -93,7 +96,7 @@ plusev-cli key email [new@email]                       request an email change f
 | Flag | Env | Purpose |
 |------|-----|---------|
 | `--debug`, `-d` | `PLUSEV_CLI_DEBUG` | Verbose logging |
-| `--registry`, `-r` | `PLUSEV_REGISTRY` | Saved registry label/host (or, for `init`, the base URL to configure) |
+| `--registry`, `-r` | `PLUSEV_REGISTRY` | Saved registry label/host (or, for `registry add`, the base URL to configure) |
 | `--base-url` | `PLUSEV_BASE_URL` | Registry base URL; skips config file lookup |
 | `--api-key` | `PLUSEV_API_KEY` | Dev key id (overrides config) |
 | `--api-secret` | `PLUSEV_SECRET` | Dev key secret (overrides config) |
